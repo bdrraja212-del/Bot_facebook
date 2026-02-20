@@ -1,0 +1,51 @@
+const express = require("express");
+const bodyParser = require("body-parser");
+const fetch = require("node-fetch");
+
+const app = express();
+app.use(bodyParser.json());
+
+const PAGE_ACCESS_TOKEN = "EAANFMGkWhJ8BQnfPeaoBcb9pfQNz6gF8UsG4ymO4NHjJH78Uw180Xiih02GtgXQtaHZBfsZCpAvIrR1NBR59v0ms8bLQSCBdPLXPZBkRAai3XXu4EQhKCWXMUKo8pQXLZBMeZAMB5C4ZAICZBPLGtmOktU12Gh1ZCi0M9I6U7sxtXv4QXAQLCTaRaDr1ildeIZAsQMnIFOgqr";
+
+app.post("/webhook", (req, res) => {
+  const body = req.body;
+
+  if (body.object === "page") {
+    body.entry.forEach(entry => {
+      const webhook_event = entry.messaging[0];
+      const sender_psid = webhook_event.sender.id;
+
+      if (webhook_event.message) {
+        let response;
+
+        if (webhook_event.message.text === "مساعدة") {
+          response = { text: "📌 الأوامر:\n- اكتب مرحبا\n- اكتب مساعدة" };
+        } else {
+          response = { text: "مرحبا 👋" };
+        }
+
+        callSendAPI(sender_psid, response);
+      }
+    });
+
+    res.status(200).send("EVENT_RECEIVED");
+  } else {
+    res.sendStatus(404);
+  }
+});
+
+function callSendAPI(sender_psid, response) {
+  fetch(
+    `https://graph.facebook.com/v18.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipient: { id: sender_psid },
+        message: response
+      })
+    }
+  );
+}
+
+app.listen(3000);
